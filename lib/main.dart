@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,41 +31,59 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String _location = "";
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  void getLocation() async {
+    // async(非同期) はGPS位置情報の取得など時間のかかるタスクを実行できるようにする
+    bool isLocationPermissionGranted =
+    await requestLocationPermission(); //位置情報許可情報 //await：これが完了しないと次に進まない
+
+    if (isLocationPermissionGranted) {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy
+              .low); //LocationAccuracy.// 位置情報の精度：高ければ高いほどバッテリー消費増
+      print(position);
+    } else {
+      print('Access to location denied.');
+    }
+  }
+
+//位置情報許可を求める
+  Future<bool> requestLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.deniedForever) {
+        return false;
+      }
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-
+       appBar: AppBar(
+         title: Text(widget.title),
+       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              '$_location',
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: getLocation,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
